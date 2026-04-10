@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CFG Derivation & Parse Tree Generator — Generate leftmost and rightmost derivation sequences and parse trees for context-free grammars. A premium tool for compiler theory and formal languages.">
+    <title>CFG Derivation & Parse Tree Generator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Background layers -->
+    <div class="bg-gradient"></div>
+    <div class="bg-noise"></div>
+    <div class="scanline-overlay"></div>
+    <div class="reflection-overlay"></div>
+    <canvas id="particles-canvas"></canvas>
+
+    <!-- Hero Section -->
+    <header class="hero-section" id="hero">
+        <div class="hero-badge">Compiler Theory • Frontend Engine</div>
+        <h1 class="hero-title">CFG Derivation &amp; Parse Tree Generator</h1>
+        <p class="hero-subtitle">Leftmost &amp; rightmost derivations • parse tree • fully offline</p>
+    </header>
+
+    <!-- Preset Pills -->
+    <section class="preset-section" id="preset-section">
+        <p class="preset-label">⚡ Try Presets</p>
+        <div class="preset-pills" id="preset-pills">
+            <button class="preset-pill" data-preset="anbn" onclick="loadPreset('anbn', this)">aⁿbⁿ</button>
+            <button class="preset-pill" data-preset="simpleab" onclick="loadPreset('simpleab', this)">Simple AB</button>
+            <button class="preset-pill" data-preset="arithmetic" onclick="loadPreset('arithmetic', this)">Arithmetic</button>
+            <button class="preset-pill" data-preset="palindrome" onclick="loadPreset('palindrome', this)">Palindrome</button>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main id="app-main">
+        <!-- Input Section -->
+        <section id="input-section" class="glass-panel" style="animation-delay: 0.3s">
+            <div class="panel-header">
+                <div class="panel-indicator"></div>
+                <h2>Grammar Input <span class="panel-badge">Config</span></h2>
+            </div>
+            <div class="panel-body">
+                <div class="input-grid">
+                    <div class="input-group" id="grammar-input-group">
+                        <label for="grammar-input">
+                            <span class="label-icon">📝</span> Production Rules
+                        </label>
+                        <textarea id="grammar-input" class="glass-textarea" rows="7" spellcheck="false"
+                            placeholder="Enter grammar rules (one per line)&#10;Format: S -> aB | bA&#10;Example:&#10;S -> aB | bA&#10;A -> aAA | a&#10;B -> bBB | b"></textarea>
+                        <div class="input-hint">
+                            Use <code>-></code> for production. Separate alternatives with <code>|</code>.
+                            Use <code>ε</code> or <code>epsilon</code> for empty string.
+                            Uppercase = non-terminals, lowercase/digits = terminals.
+                        </div>
+                    </div>
+                    <div class="input-group" id="string-input-group">
+                        <label for="string-input">
+                            <span class="label-icon">🎯</span> Input String
+                        </label>
+                        <input type="text" id="string-input" class="glass-input"
+                            placeholder="e.g., aabb" spellcheck="false">
+                        <div class="input-hint">
+                            Enter the string to derive from the grammar's start symbol.
+                        </div>
+                    </div>
+                    <div class="input-group" id="start-symbol-group">
+                        <label for="start-symbol">
+                            <span class="label-icon">🔰</span> Start Symbol
+                        </label>
+                        <input type="text" id="start-symbol" class="glass-input"
+                            placeholder="S (auto-detected)" spellcheck="false" maxlength="1">
+                        <div class="input-hint">
+                            Leave blank to use the first non-terminal in grammar.
+                        </div>
+                    </div>
+                </div>
+                <div class="button-row">
+                    <button id="btn-derive" class="btn-generate" onclick="handleDerive()">
+                        Generate
+                    </button>
+                    <button id="btn-clear" class="btn-secondary" onclick="clearAll()">
+                        Clear All
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Error/Status Display -->
+        <div id="status-bar" class="status-bar hidden">
+            <span id="status-icon" class="status-icon">⚠</span>
+            <span id="status-message" class="status-message"></span>
+            <button class="status-close" onclick="hideStatus()">✕</button>
+        </div>
+
+        <!-- Results Section -->
+        <section id="results-section" class="hidden">
+            <!-- Grammar Info Panel -->
+            <div id="grammar-info" class="glass-panel result-panel">
+                <div class="panel-header">
+                    <div class="panel-indicator"></div>
+                    <h2>Grammar Analysis <span class="panel-badge">Parsed</span></h2>
+                </div>
+                <div class="panel-body">
+                    <div id="grammar-display" class="grammar-display"></div>
+                </div>
+            </div>
+
+            <!-- Derivation Tabs -->
+            <div id="derivation-panel" class="glass-panel result-panel">
+                <div class="panel-header">
+                    <div class="panel-indicator"></div>
+                    <h2>Derivation Sequences <span class="panel-badge">Trace</span></h2>
+                </div>
+                <div class="panel-body">
+                    <div class="tab-bar" id="derivation-tabs">
+                        <button class="tab-btn active" data-tab="leftmost" onclick="switchTab('leftmost')">
+                            Leftmost
+                        </button>
+                        <button class="tab-btn" data-tab="rightmost" onclick="switchTab('rightmost')">
+                            Rightmost
+                        </button>
+                    </div>
+                    <div id="tab-leftmost" class="tab-content active">
+                        <div id="leftmost-derivation" class="derivation-steps"></div>
+                    </div>
+                    <div id="tab-rightmost" class="tab-content">
+                        <div id="rightmost-derivation" class="derivation-steps"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Parse Tree -->
+            <div id="parse-tree-panel" class="glass-panel result-panel">
+                <div class="panel-header">
+                    <div class="panel-indicator"></div>
+                    <h2>Parse Tree <span class="panel-badge">Visual</span></h2>
+                </div>
+                <div class="panel-body">
+                    <div class="tree-controls">
+                        <button class="tree-btn" onclick="zoomIn()" title="Zoom In">＋</button>
+                        <button class="tree-btn" onclick="zoomOut()" title="Zoom Out">－</button>
+                        <button class="tree-btn" onclick="resetZoom()" title="Reset">⟲</button>
+                        <button class="tree-btn" onclick="downloadTree()" title="Download PNG">⬇</button>
+                    </div>
+                    <div id="tree-container" class="tree-container">
+                        <canvas id="parse-tree-canvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer id="main-footer">
+        <div class="footer-content">
+            <p class="footer-text">CFG Derivation Engine <span class="footer-divider">·</span> Theory of Automata &amp; Formal Languages</p>
+            <p class="footer-sub">Built for students exploring context-free grammars</p>
+        </div>
+    </footer>
+
+    <script src="cfg-parser.js"></script>
+    <script src="derivation-engine.js"></script>
+    <script src="parse-tree-renderer.js"></script>
+    <script src="particles.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
