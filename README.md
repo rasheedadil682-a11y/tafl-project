@@ -1,5 +1,7 @@
 # TAFL Project – Parse Tree Visualizer 🌳
 
+deployed link - https://taflproject.netlify.app/
+
 ## 📌 Overview
 
 This project is a frontend-based tool that visualizes parse trees for given expressions using concepts from **Theory of Automata and Formal Languages (TAFL)**.
